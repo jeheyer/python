@@ -1,0 +1,314 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+import sys
+import traceback
+import http.client
+
+class LegacyURL:
+
+    def __init__(self, hostname = "localhost", path = "/", query_fields = {}):
+
+        self.old_hostname = hostname
+        self.old_path = path
+        self.old_query_fields = query_fields
+
+        # Determine what environment this is and set appropriate hostnames
+        self.SetEnvironment()
+
+        # Default HTTP response
+        self.status_code = 418
+        self.content_type = "text/plain"
+        self.body = "Hightail / YSI Legacy Redirector Function"
+        self.is_binary = False
+        self.new_url = None
+
+        # Parse the old URL
+        self.ParseOldURL()
+
+    def SetEnvironment(self):
+
+        hostname = self.old_hostname
+
+        # Pre-Preduction
+        if ".htspaces.com" in hostname or "stage.yousendit.com" in hostname:
+            if "stage." in hostname:
+                self.env = "stage"
+            else:
+                self.env = hostname.split(".")[1]
+            self.www_host = "www." + env + ".htspaces.com"
+            self.spaces_host = "spaces." + env + ".htspaces.com"
+        # John Home Test env
+        elif "j5.org" in hostname:
+            self.env = "j5"
+            self.www_host = "www.htl.j5.org"
+            self.spaces_host = "spaces.hightail.com"
+        else:
+            # Production
+            self.env = "prod"
+            self.www_host = "www.hightail.com"
+            self.spaces_host = "spaces.hightail.com"
+
+        self.s3_bucket_hostname = "hightail-" + self.env + "-legacy.s3.amazonaws.com"
+
+    def ParseOldURL(self):
+
+        import re
+
+        host = self.old_hostname
+        path = self.old_path
+        query_fields = self.old_query_fields
+
+        # Redirect to www if more specific match not found below
+        if host == "hightail.com" or "yousendit.com" in host or "ysi" in host:
+            self.SetWWWURL(path)
+
+        # Old SmartLing sites
+        if re.match(r"fr|nl|it|de|es", host):
+            self.SetWWWURL(path)
+
+        # PHI to Spaces transitional URIs
+        www_to_spaces_uris = {
+            "/login": "/login",
+            "/login.php": "/login",
+            "/loginSSO": "/corp-login",
+            "/send": "/send",
+            "/folders": "/storage/hightail",
+            "/sent": "/dashboard/tracker",
+            "/overview": "/dashboard/tracker"
+        }
+        if path in www_to_spaces_uris:
+            self.SetSpacesURL( **{'new_path': www_to_spaces_uris[path]} )
+
+        # Standard PHI Uplink URI
+        if path.startswith("/u/"):
+            self.SetSpacesURL( **{'uplink_name': path[3:]} )
+
+        # v2PHP Uplink / Dropbox
+        if host.startswith("dropbox.") and path != "/":
+        	  self.SetSpacesURL( **{'uplink_name': path.replace("/","")} )
+
+        # Alternate v2 PHP Dropbox
+        if path.startswith("/dropbox") and "dropbox" in query_fields:
+            self.SetSpacesURL( **{'uplink_name': query_fields['dropbox']} )
+
+        # PHI Downloads
+        if path.startswith("/download/") and path != "/":
+            self.SetSpacesURL(batch_id = path.split("/")[2])
+        if path == "/e" and "phi_action" in query_fields:
+            if "batch_id" in query_fields:
+                self.SetSpacesURL( **{'batch_id': query_fields['batch_id']} )
+            if "sendId" in query_fields and "emailId" in query_fields:
+            	  self.SetSpacesURL( **{'send_id': query_fields['sendId'], 'email_id': query_fields['emailId']} )
+        if path == "/dl" and "phi_action" in query_fields:
+            rurl = query_fields['rurl']
+            if "batch_id" in rurl:
+                self.SetSpacesURL( **{'batch_id': rurl[-22:]} )
+            if "send_id" in rurl and "email" in rurl:
+                self.SetSpacesURL( **{'send_id': rurl[-49:-39], 'email_id': rurl[-32:]} )
+
+        # v2PHP Downloads
+        if host.startswith("download.") and path != "/":
+            self.SetSpacesURL( **{'ufid': path.replace("/","")} )
+
+        # Send
+        if host.startswith("rcpt.") and path != "/":
+            if path[10] == "/" or path[11] == "/":
+            	  self.SetSpacesURL( **{'send_id': path.split("/")[1], 'email_id': path.split("/")[2][:32]} )
+
+        # Shared Folder
+        if path.startswith("/sharedFolder") and "phi_action" in query_fields:
+            if "id" in query_fields:
+                if "sharee" in query_fields:
+                    self.SetSpacesURL( **{'share_id': query_fields['id'], 'sharee': query_fields['sharee']} )
+                else:
+                    self.SetSpacesURL( **{'share_id': query_fields['id']} )
+
+        # transfer.php
+        if path.startswith("/transfer.php") and "action" in query_fields:
+            if query_fields['action'] == "dropbox":
+                self.SetSpacesURL(**{'uplink_name': query_fields['dropbox']} )
+            if query_fields['action'] == "download":
+                self.SetSpacesURL(**{'ufid': query_fields['ufid']} )
+            if query_fields['action'] == "batch_download":
+                if "batch_id" in query_fields:
+                    self.SetSpacesURL(**{'batch_id': query_fields['batch_id']} )
+                if "send_id" in query_fields:
+                    self.SetSpacesURL(**{'send_id': query_fields['send_id'], 'email_id': query_fields['email']} )
+
+        # v1, discontined since 2011
+        if path.startswith("/v1/"):
+            self.SetWWWURL("/features")
+
+        # Older suport sites to Redirect to Zendesk
+        if re.match(r"learn|kb|support|static", host) or re.match(r"/lenovo_getting_started|/applications|/apps", path):
+            self.SetThirdPartyURL("https://hightail.zendesk.com", "/hc/en-us")
+            # Express download
+            if path.startswith("/applications") or "Express" in path:
+                self.new_url += "/articles/203132540-Installing-Hightail-Express-"
+            # Desktop sync download
+            if re.match(r"/lenovo_getting_started|/apps|/plugins", path):
+                self.new_url += "/articles/221397607-Hightail-Desktop-app"
+
+        # Ookla speedtest
+        if host.startswith("speedtest."):
+            self.SetThirdPartyURL("https://www.speedtest.net")
+
+        # Old YSI Marketing blogs and press releases
+        if host.startswith("blog.") or path.startswith("/cms/"):
+            self.SetThirdPartyURL("https://blog.hightail.com")
+
+        # Old v2 branding images
+        if host.startswith("images."):
+            self.ProxyHTTPConnection(self.s3_bucket_hostname, "/ysi-bimages" + path)
+
+        # Old website image paths
+        if path.startswith("/en_US/"):
+            self.ProxyHTTPConnection(self.s3_bucket_hostname, path)
+        if path.startswith("/web/"):
+            self.ProxyHTTPConnection(self.s3_bucket_hostname, path)
+
+    def SetSpacesURL(self, **options):
+
+        self.status_code = 301
+        self.new_url = "https://" + self.spaces_host
+
+        # 1.0 to Spaces transition
+        if 'new_path' in options:
+            self.new_path = options['new_path']
+            self.new_url += self.new_path
+
+        # Downloads
+        if 'ufid' in options:
+            self.ufid = options['ufid']
+            assert len(self.ufid) >= 16, "Invalid UFID '{}'".format(self.ufid)
+            self.new_url += "/resolve/ufid/" + self.ufid
+        if 'batch_id' in options:
+            self.batch_id = options['batch_id']
+            assert len(self.batch_id) >= 22, "Invalid Batch ID '{}'".format(self.batch_id)
+            self.new_url += "/resolve/download/" + self.batch_id
+
+        # Uplink
+        if 'uplink_name' in options:
+            self.uplink_name = options['uplink_name']
+            self.new_url += "/resolve/u/" + self.uplink_name
+
+        # Send
+        if 'send_id' in options and 'email_id' in options:
+            self.send_id = options['send_id']
+            self.email_id = options['email_id']
+            assert len(self.send_id) >= 9, "Invalid Send ID '{}'".format(self.send_id)
+            assert len(self.email_id) == 32, "Invalid Email ID '{}'".format(self.email_id)
+            self.new_url += "/resolve/" + self.send_id + "/" + self.email_id
+
+        # Shared Folder
+        if 'share_id' in options:
+            self.share_id = options['share_id']
+            assert len(self.share_id) == 43, "Invalid Shared Folder ID '{}'".format(self.share_id)
+            self.new_url += "/share-accept/" + self.share_id
+            if 'sharee' in options:
+                self.sharee = options['sharee']
+                assert "@" in self.sharee, "Invalid Sharee e-mail address '{}'".format(self.sharee)
+                self.new_url += "?email=" + self.sharee
+
+    def SetWWWURL(self, new_path):
+        self.status_code = 301
+        self.new_path = new_path
+        self.new_url = "https://" + self.www_host + self.new_path
+
+    def SetThirdPartyURL(self, hostname, path = "/"):
+        self.status_code = 301
+        self.new_url = hostname + path
+
+    def ProxyHTTPConnection(self, hostname, path = "/", port = 80, timeout = 3):
+        if port == 443:
+            conn = http.client.HTTPSConnection(hostname, port, timeout)
+        else:
+            conn = http.client.HTTPConnection(hostname, port, timeout)
+        conn.request("GET", path)
+        resp = conn.getresponse()
+        self.status_code = resp.status
+        self.content_type = resp.headers["Content-Type"]
+        if not self.content_type.startswith("text"):
+            self.is_binary = True
+        self.body = resp.read()
+        conn.close()
+
+# AWS Lambda Entry Point
+def lambda_handler(event, context):
+
+    import base64
+
+    # Set some handy variables
+    http_hostname = event['headers']['host']
+    http_path = event['path']
+    http_query_string = event['queryStringParameters']
+
+    # Return an HTTP response
+    sys.stderr = sys.stdout
+    sys.tracebacklimit = 0
+    try:
+        r = LegacyURL(http_hostname, http_path, http_query_string)
+        if r.status_code == 301 or r.status_code == 302:
+            return {
+                'statusCode': r.status_code,
+                'headers': {'Content-Type': 'text/html', 'Location': r.new_url}
+            }
+        else:
+            if r.is_binary:
+                r.body = base64.b64encode(r.body).decode("utf-8")
+            return {
+                'isBase64Encoded': r.is_binary,
+                'statusCode': r.status_code,
+                'headers': { 'Content-Type': r.content_type },
+                'body': r.body
+            }
+    except Exception:
+        return {
+            'statusCode': 500,
+            'headers': { 'Content-Type': 'text/plain' },
+            'body': traceback.format_exc() 
+        }
+    quit()
+
+# Python CGI Script execution
+def main():
+
+    import os
+    import cgi
+
+    sys.stderr = sys.stdout
+    sys.tracebacklimit = 0
+
+    # Retrieve some HTTP headers as variables
+    http_hostname = os.environ.get('HTTP_HOST', 'localhost')
+    request_uri = os.environ.get('REQUEST_URI', '/')
+    http_path = request_uri.split('?')[0]
+    http_query_fields = {}
+
+    # Normalize dictionary from cgi.FieldStorage()
+    query_fields_objects = cgi.FieldStorage()
+    for key in query_fields_objects:
+        http_query_fields[key] = str(query_fields_objects[key].value)
+
+    # Get an HTTP response based on the old URL
+    try:
+        r = LegacyURL(http_hostname, http_path, http_query_fields)
+        if r.status_code == 301:
+            print("Status: 301 Moved Permanently\nLocation: {}\nContent-Type: text/html; charset=UTF-8\n".format(r.new_url))
+        else:
+            print("Status: {}\nContent-Type: {}\n".format(r.status_code, r.content_type))
+            if r.is_binary:
+                sys.stdout.flush() 
+                sys.stdout.buffer.write(r.body)
+            else:
+                print("\n" + r.body)
+
+    except Exception:
+        print("Status: 500\nContent-Type: text/plain\n")
+        exc = traceback.format_exc()
+        print(exc)
+
+if __name__ == "__main__":
+    main()
+    quit()
