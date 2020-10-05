@@ -2,7 +2,7 @@
 
 import os
 import sys
-sys.path.insert(1, '../python-lib/')
+sys.path.insert(1, '../lib/')
 from geoip import GeoIP
 from ip_utils import GetClientIP
 import json

@@ -260,8 +260,9 @@ def main(http_request):
     import sys
     import traceback
 
+    # Make tracebacks as brief as possible
     sys.stderr = sys.stdout
-    sys.tracebacklimit = 1
+    sys.tracebacklimit = 0
 
     try:
         http_response = ParseLegacyURL(http_request['host'], http_request['path'], http_request['query_string'])
@@ -273,9 +274,9 @@ def main(http_request):
         return {
             'status_code': 500,
             'content_type': "text/plain",
-            'body': traceback.format_exc() 
+            'body': traceback.format_exc()
         }
- 
+
 # CGI Script execution
 if __name__ == "__main__":
 
@@ -292,8 +293,8 @@ if __name__ == "__main__":
     # Convert query parameters from objects to Dictionary
     query_fields_objects = cgi.FieldStorage()
     for key in query_fields_objects:
-        http_request['query_string'][key] = str(query_fields_objects[key].value)    
-   
+        http_request['query_string'][key] = str(query_fields_objects[key].value)
+
     http_response = main(http_request)
 
     if 301 <= http_response['status_code'] <= 302:
@@ -303,10 +304,10 @@ if __name__ == "__main__":
         if type(http_response['body']) == str:
             print("\n" + http_response['body'] + "\n")
         else:
-            sys.stdout.flush() 
+            sys.stdout.flush()
             sys.stdout.buffer.write(http_response['body'])
-            #sys.stdout.buffer.write("\n")
-    quit()
+
+    sys.exit()
 
 # AWS Lambda Entry Point
 def lambda_handler(event, context):
@@ -321,22 +322,17 @@ def lambda_handler(event, context):
 
     http_response = main(http_request)
 
-    if 301 <= http_response['status_code'] <= 302:
-        return {
-            'statusCode': http_response['status_code'],
-            'headers': { 'Location': http_response['location']}
-        }
-    else:
-        if type(http_response['body']) == str:
-            is_base64 = False
-            body = http_response['body']
-        else:
-            is_base64 = True
-            body = base64.b64encode(http_response['body']).decode("utf-8")
-        return {
-            'isBase64Encoded': is_base64,
-            'statusCode': http_response['status_code'],
-            'headers': { 'Content-Type': http_response['content_type'] },
-            'body': body
-        }
+    lambda_output = {}
+    lambda_output['statusCode'] = http_response['status_code']
 
+    if 301 <= lambda_ouput['status_code'] <= 302:
+        lambda_output['headers'] = { 'Location': http_response['location']}
+    else:
+        lambda_output['headers'] =  { 'Content-Type': http_response['content_type'] }
+        if type(http_response['body']) == str:
+            lambda_output['body'] = http_response['body']
+        else:
+            lambda_output['body'] = base64.b64encode(http_response['body']).decode("utf-8")
+            lambda_output['isBase64Encoded'] = True
+
+    return lambda_output
