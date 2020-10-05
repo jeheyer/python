@@ -25,9 +25,9 @@ def GetWWWURL(env = "prod", new_path = "/"):
         www_host = "www." + env + ".htspaces.com"
 
     return { 'status_code': 301, 'location': "https://" + www_host + new_path }
-    
+
 def GetSpacesURL(env = "prod", **options):
-	
+
     if env == "prod":
         spaces_web_host = "spaces.hightail.com"
     elif env == "j5":
@@ -80,11 +80,11 @@ def GetSpacesURL(env = "prod", **options):
             new_path += "?email=" + sharee
 
     return { 'status_code': 301, 'location': "https://" + spaces_web_host + new_path }
-    
+
 def GetThirdPartyURL(url):
-	
+
     return { 'status_code': 301, 'location': url }
-        
+
 def ProxyHTTPConnection(method = "GET", hostname = "localhost", path = "/", port = 80, timeout = 3):
 
     import http.client
@@ -112,13 +112,13 @@ def ProxyHTTPConnection(method = "GET", hostname = "localhost", path = "/", port
     except Exception as e:
         return { 'status_code': 502, 'content_type': "text/plain", 'body': str(e) }
     conn.close()
-  
+
     return { 'status_code': status_code, 'content_type': content_type, 'body': body }
 
 def ParseLegacyURL(hostname = "localhost", path = "/", query_fields = {}):
 
     import re
-	
+
     env = GetEnvironment(hostname)
     #s3_bucket_hostname = "hightail-" + env + "-legacy.s3.amazonaws.com"
     s3_bucket_hostname = "hightail-j5-legacy.s3.amazonaws.com"
@@ -216,6 +216,7 @@ def ParseLegacyURL(hostname = "localhost", path = "/", query_fields = {}):
     # Old v2 branding images
     if hostname.startswith("images."):
         if "_main" in path or "_email" in path:
+            return ProxyHTTPConnection("GET", s3_bucket_name, "/ysi-bimages" + path)
             return ProxyHTTPConnection("GET", "ysi-bimages.s3.amazonaws.com", path)
         else:
             return { 'status_code': 400, 'body': "Invalid Image" }
