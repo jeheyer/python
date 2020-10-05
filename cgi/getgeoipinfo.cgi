@@ -1,12 +1,8 @@
 #!/usr/bin/env python3
 
-import os
 import sys
-sys.path.insert(1, '../lib/')
-from geoip import GeoIP
-from ip_utils import GetClientIP
+import os
 import json
-import traceback
 
 def GetIP():
 
@@ -43,9 +39,14 @@ def GetIP():
 
 def main():
 
+    import traceback
+
     sys.stderr = sys.stdout
 
     try:
+        sys.path.insert(1, '../lib/')
+        from geoip import GeoIP
+        from ip_utils import GetClientIP
         ipv4_address = GetIP()
         geo_ip = GeoIP(ipv4_address)
         print("Content-Type: application/json; charset=UTF-8\n")
