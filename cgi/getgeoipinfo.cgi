@@ -6,6 +6,7 @@ import json
 
 def GetIP():
 
+    from ip_utils import GetClientIP
     ipv4_address = None
 
     if 'REQUEST_METHOD' in os.environ:
