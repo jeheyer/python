@@ -216,8 +216,8 @@ def ParseLegacyURL(hostname = "localhost", path = "/", query_fields = {}):
     # Old v2 branding images
     if hostname.startswith("images."):
         if "_main" in path or "_email" in path:
-            return ProxyHTTPConnection("GET", s3_bucket_name, "/ysi-bimages" + path)
-            return ProxyHTTPConnection("GET", "ysi-bimages.s3.amazonaws.com", path)
+            #return ProxyHTTPConnection("GET", "ysi-bimages.s3.amazonaws.com", path)
+            return ProxyHTTPConnection("GET", s3_bucket_hostname, "/ysi-bimages" + path)
         else:
             return { 'status_code': 400, 'body': "Invalid Image" }
 
