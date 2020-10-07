@@ -40,8 +40,11 @@ def GetSpacesURL(env = "prod", **options):
     # 1.0 to Spaces transition
     if 'new_path' in options:
         new_path = options['new_path']
-        if options['new_path'].startswith("/corp-login") and 'email' in options:
-            new_path += "?email=" + options['email']
+        if options['new_path'].startswith("/corp-login"):
+            if 'email' in options:
+                new_path += "?email=" + options['email']
+            if 'caller' in options:
+                new_path += "&caller=" + options['caller']
 
     # Downloads
     if 'ufid' in options:
@@ -192,9 +195,12 @@ def ParseLegacyURL(hostname = "localhost", path = "/", query_fields = {}):
 
     # 1.0 SAML Login Handling
     if path.startswith("/loginSSO"):
-        if not 'email' in query_fields:
-            query_fields['email'] = ""
-        return GetSpacesURL(env, **{'new_path': "/corp-login", 'email': query_fields['email']} )
+        if "email" in query_fields and "caller" in query_fields:
+            return GetSpacesURL(env, **{'new_path': "/corp-login", 'email': query_fields['caller'], 'email': query_fields['caller']} )
+        elif "email" in query_fields:
+            return GetSpacesURL(env, **{'new_path': "/corp-login", 'email': query_fields['email']} )
+        else:
+            return GetSpacesURL(env, **{'new_path': "/corp-login"} )
     if path.startswith("/samlLogin"):
         if env == "prod":
             spaces_api_host = "api.spaces.hightail.com"
