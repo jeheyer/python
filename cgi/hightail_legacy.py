@@ -196,7 +196,7 @@ def ParseLegacyURL(hostname = "localhost", path = "/", query_fields = {}):
     # 1.0 SAML Login Handling
     if path.startswith("/loginSSO"):
         if "email" in query_fields and "caller" in query_fields:
-            return GetSpacesURL(env, **{'new_path': "/corp-login", 'email': query_fields['caller'], 'email': query_fields['caller']} )
+            return GetSpacesURL(env, **{'new_path': "/corp-login", 'email': query_fields['caller'], 'caller': query_fields['caller']} )
         elif "email" in query_fields:
             return GetSpacesURL(env, **{'new_path': "/corp-login", 'email': query_fields['email']} )
         else:
