@@ -98,7 +98,8 @@ def ProxyHTTPRequest(url, params = None):
         status_code = 400
         content_type = "text/plain"
         body = None
-        resp = requests.get(url, params, timeout = 10, allow_redirects = False)
+        #resp = requests.get(url, params, timeout = 10, allow_redirects = False)
+        resp = requests.get(url, params, timeout = 10)
         if resp.status_code:
             status_code = resp.status_code
         if 301 <= status_code <= 302:
