@@ -90,7 +90,7 @@ def GetThirdPartyURL(url):
 
     return { 'status_code': 301, 'location': url }
 
-def ProxyHTTPRequest(url, params = None):
+def ProxyHTTPRequest(hostname = "localhost", params = None):
 
     import requests
 
@@ -112,28 +112,34 @@ def ProxyHTTPRequest(url, params = None):
 
     return http_response
 
-def ProxyHTTPConnection(hostname = "localhost", path = "/"):
+def ProxyHTTPConnection(method = "GET", hostname = "localhost", path = "/", port = 80, timeout = 3):
 
     import http.client
+    import ssl
+
+    http_response = { 'status_code': 400, 'content_type': "text/plain", 'body': None }
 
     try:
-        status_code = 400
-        content_type = "text/plain"
-        conn = http.client.HTTPConnection(hostname, port = 80, timeout = 3)
-        conn.request("GET", path)
+        if port == 443:
+            conn = http.client.HTTPSConnection(hostname, port=port, timeout=timeout, context=ssl._create_unverified_context())
+        else:
+            conn = http.client.HTTPConnection(hostname, port=port, timeout=timeout)
+        conn.request(method, path)
         resp = conn.getresponse()
         if resp.status:
-            status_code = resp.status
-        if "Content-Type" in resp.headers:
-            content_type = resp.headers["Content-Type"]
-        if 301 < status_code < 302:
-            body = None
+            http_response['status_code'] = resp.status
+        if 'Location' in resp.headers:
+            http_response['location'] = resp.headers['Location']
         else:
-            body = resp.read()
+            if 'Content-Type' in resp.headers:
+                http_response['content_type'] = resp.headers['Content-Type']
+        if 'Set-Cookie' in resp.headers:
+            http_response['cookies'] = resp.headers['Set-Cookie']
+        body = resp.read()
     except Exception as e:
-        body = str(e)
+        http_response['body'] = str(e)
 
-    return { 'status_code': status_code, 'content_type': content_type, 'body': body }
+    return http_response
 
 def ProxyHTTPSConnection(hostname = "localhost", path = "/"):
 
@@ -255,9 +261,11 @@ def ParseLegacyURL(hostname = "localhost", path = "/", query_fields = {}):
             api_host = "api." + env + ".htspaces.com"
 
         if "email" in query_fields and "caller" in query_fields:
-            return ProxyHTTPRequest("https://{}/api/v1/saml/loginSSO?email={}&caller={}".format(api_host, query_fields['email'], query_fields['caller']))
+            #return ProxyHTTPRequest("https://{}/api/v1/saml/loginSSO?email={}&caller={}".format(api_host, query_fields['email'], query_fields['caller']))
+            return ProxyHTTPConnection("GET", api_host, "/api/v1/saml/loginSSO?email={}&caller={}".format(query_fields['email'], query_fields['caller']))
         elif "email" in query_fields:
-            return ProxyHTTPRequest("https://{}/api/v1/saml/loginSSO?email={}".format(api_host, query_fields['email']))
+            #return ProxyHTTPRequest("https://{}/api/v1/saml/loginSSO?email={}".format(api_host, query_fields['email']))
+            return ProxyHTTPConnection("GET", api_host, "/api/v1/saml/loginSSO?email={}".format(query_fields['email']))
         else:
             return GetSpacesURL(env, **{'new_path': "/corp-login"} )
 
@@ -382,6 +390,7 @@ if __name__ == "__main__":
 
     sys.exit()
 
+
 # AWS Lambda Entry Point
 def lambda_handler(event, context):
 
@@ -398,7 +407,7 @@ def lambda_handler(event, context):
     lambda_output = {}
     lambda_output['statusCode'] = http_response['status_code']
 
-    if 301 <= lambda_ouput['status_code'] <= 302:
+    if 301 <= http_response['status_code'] <= 302:
         lambda_output['headers'] = { 'Location': http_response['location']}
     else:
         lambda_output['headers'] =  { 'Content-Type': http_response['content_type'] }
@@ -407,5 +416,4 @@ def lambda_handler(event, context):
         else:
             lambda_output['body'] = base64.b64encode(http_response['body']).decode("utf-8")
             lambda_output['isBase64Encoded'] = True
-
     return lambda_output
