@@ -206,10 +206,16 @@ def ParseLegacyURL(hostname = "localhost", path = "/", query_fields = {}):
 
     # 1.0 SAML Login Handling
     if path.startswith("/loginSSO"):
+
+        if env == "prod" or env == "j5":
+            api_host = "api.spaces.hightail.com"
+        else:
+            api_host = "api." + env + ".htspaces.com"
+
         if "email" in query_fields and "caller" in query_fields:
-            return GetAPIURL(env, "/api/v1/saml/loginSSO", "?email={}&caller=".format(query_fields['email'], query_fields['caller']))
+            return ProxyHTTPConnection("GET", api_host, "/api/v1/saml/loginSSO?email={}&caller=".format(query_fields['email'], query_fields['caller']), 443)
         elif "email" in query_fields:
-            return GetAPIURL(env, "/api/v1/saml/loginSSO", "?email={}".format(query_fields['email']))
+            return ProxyHTTPConnection("GET", api_host, "/api/v1/saml/loginSSO?email={}".format(query_fields['email']), 443)
         else:
             return GetSpacesURL(env, **{'new_path': "/corp-login"} )
 
