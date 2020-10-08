@@ -364,14 +364,15 @@ if __name__ == "__main__":
         http_request['query_string'][key] = str(query_fields_objects[key].value)
 
     http_response = main(http_request)
+    print("Status: {}\n".format(http_response['status_code']))
 
     if 'cookies' in http_response:
         #for cookie in http_response['cookies']:
         print("Set-Cookie: {}\n".format(cookie))
     if 301 <= http_response['status_code'] <= 302:
-        print("Status: {} Moved Permanently\nLocation: {}\n".format(http_response['status_code'], http_response['location']))
+        print("Location: {}\n".format(http_response['location']))
     else:
-        print("Status: {}\nContent-Type: {}\n".format(http_response['status_code'], http_response['content_type']))
+        print("Content-Type: {}\n".format(http_response['content_type']))
         if type(http_response['body']) == str:
             print("\n" + http_response['body'] + "\n")
         else:
