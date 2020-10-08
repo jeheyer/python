@@ -28,18 +28,6 @@ def GetWWWURL(env = "prod", new_path = "/"):
 
     return { 'status_code': 301, 'location': "https://" + www_host + new_path }
 
-def GetAPIURL(env = "prod", new_path = "/", query_string = None):
-
-    if env == "prod":
-        api_host = "api.spaces.hightail.com"
-    elif env == "j5":
-        api_host = "api.spaces.hightail.com"
-    else:
-        api_host = "api." + env + ".htspaces.com"
-    if query_string:
-        return { 'status_code': 301, 'location': "https://" + api_host + new_path + query_string }
-    return { 'status_code': 301, 'location': "https://" + api_host + new_path }
-
 def GetSpacesURL(env = "prod", **options):
 
     if env == "prod":
@@ -207,8 +195,10 @@ def ParseLegacyURL(hostname = "localhost", path = "/", query_fields = {}):
     # 1.0 SAML Login Handling
     if path.startswith("/loginSSO"):
 
-        if env == "prod" or env == "j5":
+        if env == "prod":
             api_host = "api.spaces.hightail.com"
+        elif:
+            api_host = "api.j5.org"
         else:
             api_host = "api." + env + ".htspaces.com"
         return ProxyHTTPConnection("GET", api_host, "/api/v1/saml/loginSSO", 443)
