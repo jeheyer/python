@@ -103,7 +103,8 @@ def ProxyHTTPRequest(url, params = None):
         if resp.headers['Content-Type']:
             content_type =  resp.headers['Content-Type']
         if 301 < status_code < 302:
-            body = None
+            location = resp.headers['Location']
+            return { 'status_code': status_code, 'location': location }
         else:
             body = resp._content
     except Exception as e:
