@@ -94,24 +94,23 @@ def ProxyHTTPRequest(url, params = None):
 
     import requests
 
+    http_response = {'status_code': 400, 'content_type': "text/plain", 'body': None }
     try:
-        status_code = 400
-        content_type = "text/plain"
-        body = None
-        #resp = requests.get(url, params, timeout = 10, allow_redirects = False)
-        resp = requests.get(url, params, timeout = 10)
+        resp = requests.get(url, params, timeout = 10, allow_redirects = False)
         if resp.status_code:
-            status_code = resp.status_code
-        if 301 <= status_code <= 302:
-            return { 'status_code': status_code, 'location': resp.headers['Location'] }
+            http_response['status_code'] = resp.status_code
+        if 301 <= http_response['status_code'] <= 302:
+            http_response['location'] = resp.headers['Location']
         else:
             if resp.headers['Content-Type']:
-                content_type = resp.headers['Content-Type']
-            body = resp._content
+                http_response['content_type'] = resp.headers['Content-Type']
+            http_response['body'] = resp.text
+        if resp.headers['Set-Cookie']:
+            http_response['cookies'] = resp.headers['Set-Cookie']
     except Exception as e:
-        body = str(e)
+        http_response['body'] = str(e)
 
-    return { 'status_code': status_code, 'content_type': content_type, 'body': body }
+    return http_response
 
 def ProxyHTTPConnection(hostname = "localhost", path = "/"):
 
@@ -366,6 +365,9 @@ if __name__ == "__main__":
 
     http_response = main(http_request)
 
+    if 'cookies' in http_response:
+        for cookie in http_response['cookies']:
+            print("Set Cookie: {}\n".format(cookie))
     if 301 <= http_response['status_code'] <= 302:
         print("Status: {} Moved Permanently\nLocation: {}\n".format(http_response['status_code'], http_response['location']))
     else:
