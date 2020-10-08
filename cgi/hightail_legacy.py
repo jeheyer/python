@@ -364,6 +364,7 @@ if __name__ == "__main__":
         http_request['query_string'][key] = str(query_fields_objects[key].value)
 
     http_response = main(http_request)
+
     if 301 <= http_response['status_code'] <= 302:
         print("Status: {}\nLocation: {}".format(http_response['status_code'], http_response['location']))
     else:
@@ -372,7 +373,7 @@ if __name__ == "__main__":
     if 'cookies' in http_response:
         print("Set-Cookie: {}\n".format(http_response['cookies']))
 
-    if 'body' in http_response:
+    if http_reponse['body']:
         if type(http_response['body']) == str:
             print("\n" + http_response['body'] + "\n")
         else:
