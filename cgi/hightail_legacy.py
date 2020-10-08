@@ -368,7 +368,7 @@ if __name__ == "__main__":
 
     if 'cookies' in http_response:
         #for cookie in http_response['cookies']:
-        print("Set-Cookie: {}\n".format(cookie))
+        print("Set-Cookie: {}\n".format(response['cookies']))
     if 301 <= http_response['status_code'] <= 302:
         print("Location: {}\n".format(http_response['location']))
     else:
