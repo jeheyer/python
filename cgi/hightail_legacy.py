@@ -5,6 +5,8 @@ from __future__ import print_function
 
 def GetEnvironment(hostname):
 
+    hostnames = {}
+
     # Pre-Preduction
     if ".htspaces.com" in hostname or "stage.yousendit.com" in hostname:
         if "stage." in hostname:
@@ -16,6 +18,7 @@ def GetEnvironment(hostname):
         return "j5"
     else:
         return "prod"
+
 
 def GetWWWURL(env = "prod", new_path = "/"):
 
@@ -124,10 +127,11 @@ def ProxyHTTPConnection(method = "GET", hostname = "localhost", path = "/", port
                 http_response['content_type'] = resp.headers['Content-Type']
         if 'Set-Cookie' in resp.headers:
             http_response['cookies'] = resp.headers['Set-Cookie']
-        body = resp.read()
+        http_response['body'] = resp.read()
     except Exception as e:
         http_response['body'] = str(e)
 
+    conn.close()
     return http_response
 
 def ParseLegacyURL(hostname = "localhost", path = "/", query_fields = {}):
