@@ -37,6 +37,7 @@ def GetSpacesAPIHost(env = "prod"):
         api_host = "api.spaces.hightail.com"
     else:
         api_host = "api." + env + ".htspaces.com"
+    return api_host
 
 def GetSpacesURL(env = "prod", **options):
 
@@ -50,11 +51,6 @@ def GetSpacesURL(env = "prod", **options):
     # 1.0 to Spaces transition
     if 'new_path' in options:
         new_path = options['new_path']
-        if options['new_path'].startswith("/corp-login"):
-            if 'email' in options:
-                new_path += "?email=" + options['email']
-            if 'caller' in options:
-                new_path += "&caller=" + options['caller']
 
     # Downloads
     if 'ufid' in options:
@@ -115,7 +111,8 @@ def ProxyHTTPConnection(method = "GET", hostname = "localhost", path = "/", port
         if method == "POST":
             params = urllib.parse.urlencode({'@number': 12524, '@type': 'issue', '@action': 'show'})
             headers = {'Content-Type': "application/x-www-form-urlencoded", 'Accept': "text/plain,text/html,application/xhtml+xml,application/xml"} 
-        conn.request(method, path)
+        else:
+            conn.request(method, path)
         resp = conn.getresponse()
         if resp.status:
             http_response['status_code'] = resp.status
@@ -207,12 +204,12 @@ def ParseLegacyURL(hostname = "localhost", path = "/", query_fields = {}):
     # 1.0 SAML Login Handling
     if path.startswith("/loginSSO"):
         api_host = GetSpacesAPIHost(env)
-        if "email" in query_fields and "caller" in query_fields:
-            return ProxyHTTPConnection("GET", api_host, "/api/v1/saml/loginSSO?email={}&caller={}".format(query_fields['email'], query_fields['caller']), 443)
-        elif "email" in query_fields:
-            return ProxyHTTPConnection("GET", api_host, "/api/v1/saml/loginSSO?email={}".format(query_fields['email']), 443)
-        else:
-            return GetSpacesURL(env, **{'new_path': "/corp-login"} )
+        api_uri = "/api/v1/saml/loginSSO"
+        if 'email' in query_fields:
+            api_uri += "?email={}".format(query_fields['email'])
+        if 'caller' in query_fields:
+            api_uri += "&caller={}".format(query_fields['caller'])
+        return ProxyHTTPConnection("GET", api_host, api_uri, 443)
 
     # 1.0 SAML Callback Handling
     if path.startswith("/samlLogin"):
