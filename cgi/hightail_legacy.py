@@ -230,7 +230,7 @@ def ParseLegacyURL(hostname = "localhost", path = "/", query_fields = {}):
             api_host = "api.spaces.hightail.com"
         else:
             api_host = "api." + env + ".htspaces.com"
-        return ProxyHTTPSConnection("https://{}/api/v1/saml/loginSSO?email={}".format(api_host, query_fields['email'])
+        return ProxyHTTPSConnection("https://{}/api/v1/saml/loginSSO?email={}".format(api_host, query_fields['email']))
 
         if "email" in query_fields and "caller" in query_fields:
             return ProxyHTTPConnection("GET", api_host, "/api/v1/saml/loginSSO?email={}&caller=".format(query_fields['email'], query_fields['caller']), 443)
