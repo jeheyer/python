@@ -31,18 +31,16 @@ def main():
 
     url = "https://www.hightail.com/en_US/theme_default/images/hightop_250px.png"
     try:
-        status_code = 400
         resp = requests.get(url, params = {}, timeout = 5, allow_redirects = False)
         if 301 <= resp.status_code <= 302:
             print("Status: {}\nLocation: {}\n".format(resp.status_code, resp.headers['Location']))
         else:
             print("Status: {}\nContent-Type: {}\n".format(resp.status_code, resp.headers['Content-Type']))
-        body = resp._content
-        if type(body) == str:
-            print("{}\n".format(body))
+        if resp.headers['Content-Type'].startswith("text"):
+            print("{}\n".format(resp.text))
         else:
             sys.stdout.flush()
-            sys.stdout.buffer.write(body)
+            sys.stdout.buffer.write(resp._content)
 
     except Exception as e:
         print("Status: 500\nContent-Type: text/plain\n\n{}".format(e))
