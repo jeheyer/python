@@ -90,7 +90,7 @@ def GetThirdPartyURL(url):
 
     return { 'status_code': 301, 'location': url }
 
-def ProxyHTTPSConnection(url, params)
+def ProxyHTTPSConnection(url, params):
 
     import requests
 
