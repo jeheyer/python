@@ -111,23 +111,45 @@ def ProxyHTTPRequest(url, params = None):
 
     return { 'status_code': status_code, 'content_type': content_type, 'body': body }
 
-def ProxyHTTPConnection(method = "GET", hostname = "localhost", path = "/", port = 80, timeout = 3):
+def ProxyHTTPConnection(hostname = "localhost", path = "/"):
 
     import http.client
-    import urllib.parse
+
+    try:
+        status_code = 400
+        content_type = "text/plain"
+        conn = http.client.HTTPConnection(hostname, port = 80, timeout = 3)
+        conn.request("GET", path)
+        resp = conn.getresponse()
+        if resp.status:
+            status_code = resp.status
+        if "Content-Type" in resp.headers:
+            content_type = resp.headers["Content-Type"]
+        if 301 < status_code < 302:
+            body = None
+        else:
+            body = resp.read()
+    except Exception as e:
+        body = str(e)
+
+    return { 'status_code': status_code, 'content_type': content_type, 'body': body }
+
+def ProxyHTTPSConnection(hostname = "localhost", path = "/"):
+
+    import http.client
     import ssl
 
-    if port == 443 or port == 8443:
+    if port == 443:
         try:
             conn = http.client.HTTPSConnection(hostname, port = port, timeout = timeout, context = ssl._create_unverified_context())
         except Exception as e:
             return { 'status_code': 502, 'content_type': "text/plain", 'body': str(e) }
     else:
-        conn = http.client.HTTPConnection(hostname, port = port, timeout = timeout)
+        conn = http.client.HTTPConnection(hostname, port = 80, timeout = timeout)
 
     try:
-        status_code = 502
-        content_type = None
+        status_code = 400
+        content_type = "text/plain"
         if method == "POST":
             params = urllib.parse.urlencode({'@number': 12524, '@type': 'issue', '@action': 'show'})
             headers = {'Content-Type': "application/x-www-form-urlencoded", 'Accept': "text/plain,text/html,application/xhtml+xml,application/xml"} 
@@ -251,7 +273,7 @@ def ParseLegacyURL(hostname = "localhost", path = "/", query_fields = {}):
 
     # Old website image paths
     if path.startswith("/en_US/") or path.startswith("/web/"):
-        return ProxyHTTPRequest("http://" + s3_bucket_hostname + path)
+        return ProxyHTTPConnection(s3_bucket_hostname, path)
 
     # v3 Branding Images
     if path.startswith("/uploads/logos/"):
