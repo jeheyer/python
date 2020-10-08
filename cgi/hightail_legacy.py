@@ -373,7 +373,7 @@ if __name__ == "__main__":
     if 'cookies' in http_response:
         print("Set-Cookie: {}\n".format(http_response['cookies']))
 
-    if http_reponse['body']:
+    if http_response['body']:
         if type(http_response['body']) == str:
             print("\n" + http_response['body'] + "\n")
         else:
