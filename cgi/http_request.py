@@ -27,6 +27,8 @@ def main2():
 def main():
 
     import requests
+    import sys
+
     url = "https://www.hightail.com/en_US/theme_default/images/hightop_250px.png"
     try:
         status_code = 400
@@ -35,7 +37,7 @@ def main():
             print("Status: {}\nLocation: {}\n".format(resp.status_code, resp.headers['Location']))
         else:
             print("Status: {}\nContent-Type: {}\n".format(resp.status_code, resp.headers['Content-Type']))
-        body = resp.text
+        body = resp._content
         if type(body) == str:
             print("{}\n".format(body))
         else:
