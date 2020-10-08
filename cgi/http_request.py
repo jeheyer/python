@@ -12,7 +12,7 @@ def main():
     resp = conn.getresponse()
 
     if 301 <= resp.status <= 302:
-        print("Status: {}\nLocation: {}".format(resp.status, resp.headers['Location']))
+        print("Status: {}\nLocation: {}\n".format(resp.status, resp.headers['Location']))
     else:
         print("Status: {}\nContent-Type: {}\n".format(resp.status, resp.headers['Content-Type']))
     body = resp.read()
