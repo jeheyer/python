@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
     
-def main():
+def main2():
     import http.client
     import ssl
     import sys
@@ -24,23 +24,26 @@ def main():
         sys.stdout.flush()
         sys.stdout.buffer.write(body)
 
-def main2():
+def main():
+
     import requests
-    url = "https://api.j5.org"
+    url = "https://www.highdtail.com/en_US/theme_default/images/hightop_250px.png"
     try:
         status_code = 400
-        resp = requests.get(url, params, timeout = 5)
-        if resp.status_code:
-            status_code = resp.status_code
-        if resp.headers['Content-Type']:
-            content_type =  resp.headers['Content-Type']
-        if 301 < status_code < 302:
-            body = None
+        resp = requests.get(url, params = {}, timeout = 5, allow_redirects = False)
+        if 301 <= resp.status_code <= 302:
+            print("Status: {}\nLocation: {}\n".format(resp.status_code, resp.headers['Location']))
         else:
-            body = resp._content
-        print(content_type)
+            print("Status: {}\nContent-Type: {}\n".format(resp.status_code, resp.headers['Content-Type']))
+        body = resp.text
+        if type(body) == str:
+            print("{}\n".format(body))
+        else:
+            sys.stdout.flush()
+            sys.stdout.buffer.write(body)
+
     except Exception as e:
-        print(e)
+        print("Status: 502\nContent-Type: text/plain\n{}".format(e))
 
 if __name__ == "__main__":
     main()
