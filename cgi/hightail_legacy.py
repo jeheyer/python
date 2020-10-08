@@ -122,9 +122,8 @@ def ProxyHTTPConnection(method = "GET", hostname = "localhost", path = "/", port
             http_response['status_code'] = resp.status
         if 'Location' in resp.headers:
             http_response['location'] = resp.headers['Location']
-        else:
-            if 'Content-Type' in resp.headers:
-                http_response['content_type'] = resp.headers['Content-Type']
+        if 'Content-Type' in resp.headers:
+            http_response['content_type'] = resp.headers['Content-Type']
         if 'Set-Cookie' in resp.headers:
             http_response['cookies'] = resp.headers['Set-Cookie']
         http_response['body'] = resp.read()
