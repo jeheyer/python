@@ -7,8 +7,8 @@ def main():
 
     conn = http.client.HTTPSConnection("www.hightail.com", port = 443, timeout = 3, context = ssl._create_unverified_context())
     #conn.request("GET", "/en_US/theme_default/images/hightop_250px.png")
-    #conn.request("GET", "/")
-    conn.request("GET", "/login.php")
+    conn.request("GET", "/")
+    #conn.request("GET", "/login.php")
     resp = conn.getresponse()
 
     if 301 <= resp.status <= 302:
