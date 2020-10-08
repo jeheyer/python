@@ -292,8 +292,7 @@ def main(http_request):
         return {
             'status_code': 500,
             'content_type': "text/plain",
-            #'body': traceback.format_exc()
-            'body': "FML"
+            'body': traceback.format_exc()
         }
 
 # CGI Script execution
