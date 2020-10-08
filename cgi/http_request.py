@@ -43,7 +43,7 @@ def main():
             sys.stdout.buffer.write(body)
 
     except Exception as e:
-        print("Status: 502\nContent-Type: text/plain\n{}".format(e))
+        print("Status: 500\nContent-Type: text/plain\n\n{}".format(e))
 
 if __name__ == "__main__":
     main()
