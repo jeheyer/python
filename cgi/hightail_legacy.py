@@ -28,6 +28,16 @@ def GetWWWURL(env = "prod", new_path = "/"):
 
     return { 'status_code': 301, 'location': "https://" + www_host + new_path }
 
+def GetSpacesAPIHost(env = "prod"):
+
+    if env == "prod":
+        api_host = "api.spaces.hightail.com"
+    elif env == "j5":
+        #api_host = "api.j5.org"
+        api_host = "api.spaces.hightail.com"
+    else:
+        api_host = "api." + env + ".htspaces.com"
+
 def GetSpacesURL(env = "prod", **options):
 
     if env == "prod":
@@ -90,28 +100,6 @@ def GetThirdPartyURL(url):
 
     return { 'status_code': 301, 'location': url }
 
-def ProxyHTTPRequest(hostname = "localhost", params = None):
-
-    import requests
-
-    http_response = {'status_code': 400, 'content_type': "text/plain", 'body': None }
-    try:
-        resp = requests.get(url, params, timeout = 10, allow_redirects = False)
-        if resp.status_code:
-            http_response['status_code'] = resp.status_code
-        if 301 <= http_response['status_code'] <= 302:
-            http_response['location'] = resp.headers['Location']
-        else:
-            if resp.headers['Content-Type']:
-                http_response['content_type'] = resp.headers['Content-Type']
-            http_response['body'] = resp.text
-        if resp.headers['Set-Cookie']:
-            http_response['cookies'] = resp.headers['Set-Cookie']
-    except Exception as e:
-        http_response['body'] = str(e)
-
-    return http_response
-
 def ProxyHTTPConnection(method = "GET", hostname = "localhost", path = "/", port = 80, timeout = 3):
 
     import http.client
@@ -124,6 +112,9 @@ def ProxyHTTPConnection(method = "GET", hostname = "localhost", path = "/", port
             conn = http.client.HTTPSConnection(hostname, port=port, timeout=timeout, context=ssl._create_unverified_context())
         else:
             conn = http.client.HTTPConnection(hostname, port=port, timeout=timeout)
+        if method == "POST":
+            params = urllib.parse.urlencode({'@number': 12524, '@type': 'issue', '@action': 'show'})
+            headers = {'Content-Type': "application/x-www-form-urlencoded", 'Accept': "text/plain,text/html,application/xhtml+xml,application/xml"} 
         conn.request(method, path)
         resp = conn.getresponse()
         if resp.status:
@@ -140,43 +131,6 @@ def ProxyHTTPConnection(method = "GET", hostname = "localhost", path = "/", port
         http_response['body'] = str(e)
 
     return http_response
-
-def ProxyHTTPSConnection(hostname = "localhost", path = "/"):
-
-    import http.client
-    import ssl
-
-    if port == 443:
-        try:
-            conn = http.client.HTTPSConnection(hostname, port = port, timeout = timeout, context = ssl._create_unverified_context())
-        except Exception as e:
-            return { 'status_code': 502, 'content_type': "text/plain", 'body': str(e) }
-    else:
-        conn = http.client.HTTPConnection(hostname, port = 80, timeout = timeout)
-
-    try:
-        status_code = 400
-        content_type = "text/plain"
-        if method == "POST":
-            params = urllib.parse.urlencode({'@number': 12524, '@type': 'issue', '@action': 'show'})
-            headers = {'Content-Type': "application/x-www-form-urlencoded", 'Accept': "text/plain,text/html,application/xhtml+xml,application/xml"} 
-            conn.request(method, path, params, headers)
-        else:
-            conn.request("GET", path)
-        resp = conn.getresponse()
-        if resp.status:
-           status_code = resp.status
-        if "Content-Type" in resp.headers:
-            content_type = resp.headers["Content-Type"]
-        if 301 < status_code < 302:
-            body = None
-        else:
-            body = resp.read()
-    except Exception as e:
-        return { 'status_code': status_code, 'content_type': "text/plain", 'body': str(e) }
-
-    conn.close()
-    return { 'status_code': status_code, 'content_type': content_type, 'body': body }
 
 def ParseLegacyURL(hostname = "localhost", path = "/", query_fields = {}):
 
@@ -213,11 +167,7 @@ def ParseLegacyURL(hostname = "localhost", path = "/", query_fields = {}):
         if "send_id" in rurl and "email" in rurl:
             return GetSpacesURL(env, **{'send_id': rurl[-49:-39], 'email_id': rurl[-32:]} )
 
-    # v2PHP Downloads
-    if hostname.startswith("download.") and path != "/":
-       return GetSpacesURL(env, **{'ufid': path.replace("/","")} )
-
-    # Uplink / Dropbox handling
+    # Uplink / Dropbox
     if path.startswith("/u/"):
         return GetSpacesURL(env, **{'uplink_name': path[3:]} )
     if hostname.startswith("dropbox.") and path != "/":
@@ -225,7 +175,7 @@ def ParseLegacyURL(hostname = "localhost", path = "/", query_fields = {}):
     if path.startswith("/dropbox") and "dropbox" in query_fields:
         return GetSpacesURL(env, **{'uplink_name': query_fields['dropbox']} )
 
-    # Send handling
+    # v3 Send
     if hostname.startswith("rcpt.") and path != "/":
         if path[10] == "/" or path[11] == "/":
             return GetSpacesURL(env, **{'send_id': path.split("/")[1], 'email_id': path.split("/")[2][:32]} )
@@ -237,6 +187,10 @@ def ParseLegacyURL(hostname = "localhost", path = "/", query_fields = {}):
                 return GetSpacesURL(env, **{'share_id': query_fields['id'], 'sharee': query_fields['sharee']} )
             else:
                 return GetSpacesURL(env, **{'share_id': query_fields['id']} )
+
+    # v2PHP Downloads
+    if hostname.startswith("download.") and path != "/":
+       return GetSpacesURL(env, **{'ufid': path.replace("/","")} )
 
     # transfer.php
     if path.startswith("/transfer.php") and "action" in query_fields:
@@ -252,33 +206,18 @@ def ParseLegacyURL(hostname = "localhost", path = "/", query_fields = {}):
 
     # 1.0 SAML Login Handling
     if path.startswith("/loginSSO"):
-        if env == "prod":
-            api_host = "api.spaces.hightail.com"
-        elif env == "j5":
-            #api_host = "api.j5.org"
-            api_host = "api.spaces.hightail.com"
-        else:
-            api_host = "api." + env + ".htspaces.com"
-
+        api_host = GetSpacesAPIHost(env)
         if "email" in query_fields and "caller" in query_fields:
-            #return ProxyHTTPRequest("https://{}/api/v1/saml/loginSSO?email={}&caller={}".format(api_host, query_fields['email'], query_fields['caller']))
-            return ProxyHTTPConnection("GET", api_host, "/api/v1/saml/loginSSO?email={}&caller={}".format(query_fields['email'], query_fields['caller']))
+            return ProxyHTTPConnection("GET", api_host, "/api/v1/saml/loginSSO?email={}&caller={}".format(query_fields['email'], query_fields['caller']), 443)
         elif "email" in query_fields:
-            #return ProxyHTTPRequest("https://{}/api/v1/saml/loginSSO?email={}".format(api_host, query_fields['email']))
-            return ProxyHTTPConnection("GET", api_host, "/api/v1/saml/loginSSO?email={}".format(query_fields['email']))
+            return ProxyHTTPConnection("GET", api_host, "/api/v1/saml/loginSSO?email={}".format(query_fields['email']), 443)
         else:
             return GetSpacesURL(env, **{'new_path': "/corp-login"} )
 
-
     # 1.0 SAML Callback Handling
     if path.startswith("/samlLogin"):
-        if env == "prod":
-            spaces_api_host = "api.spaces.hightail.com"
-        elif env == "j5":
-            spaces_api_host = "api.j5.org"
-        else:
-            spaces_api_host = "api." + env + ".htspaces.com"
-        return ProxyHTTPConnection("POST", spaces_api_host, "/api/v1/saml/consumer", 443)
+        api_host = GetSpacesAPIHost(env)
+        return ProxyHTTPConnection("POST", api_host, "/api/v1/saml/consumer", 443)
 
     # Old website image paths
     if path.startswith("/en_US/") or path.startswith("/web/"):
