@@ -29,7 +29,7 @@ def main():
     import requests
     import sys
 
-    url = "https://www.hightail.com/"
+    url = "https://www.hightail.com//n_US/theme_default/images/hightop_250px.png"
     try:
         resp = requests.get(url, params = {}, timeout = 5, allow_redirects = False)
         if 301 <= resp.status_code <= 302:
