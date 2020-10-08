@@ -103,7 +103,10 @@ def ProxyHTTPConnection(method = "GET", hostname = "localhost", path = "/", port
             return { 'status_code': 502, 'content_type': "text/plain", 'body': str(e) }
     else:
         conn = http.client.HTTPConnection(hostname, port = port, timeout = timeout)
+
     try:
+        status_code = 502
+        content_type = None
         if method == "POST":
             params = urllib.parse.urlencode({'@number': 12524, '@type': 'issue', '@action': 'show'})
             headers = {'Content-Type': "application/x-www-form-urlencoded", 'Accept': "text/plain,text/html,application/xhtml+xml,application/xml"} 
@@ -111,19 +114,18 @@ def ProxyHTTPConnection(method = "GET", hostname = "localhost", path = "/", port
         else:
             conn.request("GET", path)
         resp = conn.getresponse()
-        status_code = resp.status
+        if resp.status:
+           status_code = resp.status
         if "Content-Type" in resp.headers:
             content_type = resp.headers["Content-Type"]
-        else:
-            content_type = None
         if 301 < status_code < 302:
             body = None
         else:
             body = resp.read()
     except Exception as e:
-        return { 'status_code': 502, 'content_type': "text/plain", 'body': str(e) }
-    conn.close()
+        return { 'status_code': status_code, 'content_type': "text/plain", 'body': str(e) }
 
+    conn.close()
     return { 'status_code': status_code, 'content_type': content_type, 'body': body }
 
 def ParseLegacyURL(hostname = "localhost", path = "/", query_fields = {}):
