@@ -318,9 +318,9 @@ if __name__ == "__main__":
     if 'cookies' in http_response:
         print("Set-Cookie: {}\n".format(http_response['cookies']))
 
-    if 'body' in http_response:
+    if 'body' in http_response and http_response['body']:
         if type(http_response['body']) == str:
-            print("\n" + http_response['body'] + "\n")
+            print("\n{}".format(http_response['body']))
         else:
             sys.stdout.flush()
             sys.stdout.buffer.write(http_response['body'])
