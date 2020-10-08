@@ -96,6 +96,7 @@ def ProxyHTTPSConnection(url, params = None):
 
     try:
         status_code = 400
+        content_type = "text/plain"
         resp = requests.get(url, params, timeout = 5)
         if resp.status_code:
             status_code = resp.status_code
@@ -106,7 +107,7 @@ def ProxyHTTPSConnection(url, params = None):
         else:
             body = resp._content
     except Exception as e:
-        return { 'status_code': status_code, 'content_type': "text/plain", 'body': str(e) }
+        body = str(e)
 
     return { 'status_code': status_code, 'content_type': content_type, 'body': body }
 
