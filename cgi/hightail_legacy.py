@@ -144,7 +144,6 @@ def ParseLegacyURL(hostname = "localhost", path = "/", query_fields = {}):
     www_to_spaces_uris = {
         "/login": "/login",
         "/login.php": "/login",
-        #"/loginSSO": "/corp-login",
         "/send": "/send",
         "/folders": "/storage/hightail",
         "/sent": "/dashboard/tracker",
@@ -207,13 +206,18 @@ def ParseLegacyURL(hostname = "localhost", path = "/", query_fields = {}):
 
     # 1.0 SAML Login Handling
     if path.startswith("/loginSSO"):
-        return GetAPIURL(env, "/api/v1/saml/loginSSO")
+
+        if "email" in query_fields and "caller" in query_fields:
+            return GetAPIURL(env, "/api/v1/saml/loginSSO", "?email={}&caller=".format(query_fields['email'], query_fields['caller']))
+        elif "email" in query_fields:
+            return GetAPIURL(env, "/api/v1/saml/loginSSO", "?email={}".format(query_fields['email']))
+        else:
+            return GetSpacesURL(env, **{'new_path': "/corp-login"} )
+
         #if "email" in query_fields and "caller" in query_fields:
         #    return GetAPIURL(env, "/api/v1/saml/loginSSO"), 'email': query_fields['caller'], 'caller': query_fields['caller']} )
         #elif "email" in query_fields:
         #    return GetSpacesURL(env, **{'new_path': "/corp-login", 'email': query_fields['email']} )
-        #else:
-        #    return GetSpacesURL(env, **{'new_path': "/corp-login"} )
 
     # 1.0 SAML Callback Handling
     if path.startswith("/samlLogin"):
