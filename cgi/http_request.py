@@ -7,13 +7,14 @@ def main():
 
     conn = http.client.HTTPSConnection("www.hightail.com", port = 443, timeout = 3, context = ssl._create_unverified_context())
     #conn.request("GET", "/en_US/theme_default/images/hightop_250px.png")
+    #conn.request("GET", "/")
     conn.request("GET", "/")
     resp = conn.getresponse()
 
     print("Status: {}\nContent-Type: {}\n".format(resp.status, resp.headers['Content-Type']))
     body = resp.read()
     if type(body) == str:
-        print("\n" + body)
+        print("{}\n".format(body))
     else:
         # Output binary
         sys.stdout.flush()
