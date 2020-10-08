@@ -112,8 +112,14 @@ def ProxyHTTPConnection(method = "GET", hostname = "localhost", path = "/", port
             conn.request("GET", path)
         resp = conn.getresponse()
         status_code = resp.status
-        content_type = resp.headers["Content-Type"]
-        body = resp.read()
+        if "Content-Type" in resp.headers:
+            content_type = resp.headers["Content-Type"]
+        else:
+            content_type = None
+        if 301 < status_code < 302:
+            body = None
+        else:
+            body = resp.read()
     except Exception as e:
         return { 'status_code': 502, 'content_type': "text/plain", 'body': str(e) }
     conn.close()
