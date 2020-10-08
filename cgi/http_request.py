@@ -11,10 +11,12 @@ def main():
     conn.request("GET", "/login.php")
     resp = conn.getresponse()
 
-    print("Status: {}\nContent-Type: {}\n".format(resp.status, resp.headers['Content-Type']))
     if 301 <= resp.status <= 302:
-        print("Location: {}\n".format(resp.headers['Location']))
+        print("Status: {}\nLocation: {}".format(resp.status, resp.headers['Location']))
+    else:
+        print("Status: {}\nContent-Type: {}\n".format(resp.status, resp.headers['Content-Type']))
     body = resp.read()
+
     if type(body) == str:
         print("{}\n".format(body))
     else:
