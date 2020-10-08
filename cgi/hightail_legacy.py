@@ -222,12 +222,12 @@ def ParseLegacyURL(hostname = "localhost", path = "/", query_fields = {}):
 
     # Old website image paths
     if path.startswith("/en_US/") or path.startswith("/web/"):
-        return ProxyHTTPConnection(s3_bucket_hostname, path)
+        return ProxyHTTPConnection("GET", s3_bucket_hostname, path)
 
     # v3 Branding Images
     if path.startswith("/uploads/logos/"):
         file = path.split("/")[3]
-        return ProxyHTTPConnection("GET", "bitspring-email-assets.s3.amazonaws.com", "/branding/" + file, 443)
+        return ProxyHTTPConnection("GET", "bitspring-email-assets.s3.amazonaws.com", "/branding/"+file)
 
     # Old v2 branding images
     if hostname.startswith("images."):
