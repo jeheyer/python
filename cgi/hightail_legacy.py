@@ -90,7 +90,7 @@ def GetThirdPartyURL(url):
 
     return { 'status_code': 301, 'location': url }
 
-def ProxyHTTPConnection(url, params = None):
+def ProxyHTTPRequest(url, params = None):
 
     import requests
 
@@ -111,7 +111,7 @@ def ProxyHTTPConnection(url, params = None):
 
     return { 'status_code': status_code, 'content_type': content_type, 'body': body }
 
-def ProxyHTTPsdfConnection(method = "GET", hostname = "localhost", path = "/", port = 80, timeout = 3):
+def ProxyHTTPConnection(method = "GET", hostname = "localhost", path = "/", port = 80, timeout = 3):
 
     import http.client
     import urllib.parse
@@ -223,7 +223,6 @@ def ParseLegacyURL(hostname = "localhost", path = "/", query_fields = {}):
 
     # 1.0 SAML Login Handling
     if path.startswith("/loginSSO"):
-
         if env == "prod":
             api_host = "api.spaces.hightail.com"
         elif env == "j5":
@@ -231,7 +230,7 @@ def ParseLegacyURL(hostname = "localhost", path = "/", query_fields = {}):
             api_host = "api.spaces.hightail.com"
         else:
             api_host = "api." + env + ".htspaces.com"
-        return ProxyHTTPConnection("https://{}/api/v1/saml/loginSSO?email={}".format(api_host, query_fields['email']))
+        return ProxyHTTPRequest("https://{}/api/v1/saml/loginSSO?email={}".format(api_host, query_fields['email']))
 
         if "email" in query_fields and "caller" in query_fields:
             return ProxyHTTPConnection("GET", api_host, "/api/v1/saml/loginSSO?email={}&caller=".format(query_fields['email'], query_fields['caller']), 443)
@@ -252,7 +251,7 @@ def ParseLegacyURL(hostname = "localhost", path = "/", query_fields = {}):
 
     # Old website image paths
     if path.startswith("/en_US/") or path.startswith("/web/"):
-        return ProxyHTTPConnection("http://" + s3_bucket_hostname + path)
+        return ProxyHTTPRequest("http://" + s3_bucket_hostname + path)
 
     # v3 Branding Images
     if path.startswith("/uploads/logos/"):
