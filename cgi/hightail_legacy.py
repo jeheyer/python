@@ -97,7 +97,7 @@ def ProxyHTTPRequest(url, params = None):
     try:
         status_code = 400
         content_type = "text/plain"
-        resp = requests.get(url, params, timeout = 5)
+        resp = requests.get(url, params, timeout = 5, allow_redirects = False)
         if resp.status_code:
             status_code = resp.status_code
         if resp.headers['Content-Type']:
