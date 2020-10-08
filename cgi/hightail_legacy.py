@@ -96,10 +96,11 @@ def GetThirdPartyURL(url):
 
     return { 'status_code': 301, 'location': url }
 
-def ProxyHTTPConnection(method = "GET", hostname = "localhost", path = "/", port = 80, timeout = 3):
+def ProxyHTTPConnection(method = "GET", hostname = "localhost", path = "/", port = 80, timeout = 5):
 
     import http.client
     import ssl
+    import urllib.parse
 
     http_response = { 'status_code': 400, 'content_type': "text/plain", 'body': None }
 
@@ -108,11 +109,11 @@ def ProxyHTTPConnection(method = "GET", hostname = "localhost", path = "/", port
             conn = http.client.HTTPSConnection(hostname, port=port, timeout=timeout, context=ssl._create_unverified_context())
         else:
             conn = http.client.HTTPConnection(hostname, port=port, timeout=timeout)
-        if method == "POST":
-            params = urllib.parse.urlencode({'@number': 12524, '@type': 'issue', '@action': 'show'})
-            headers = {'Content-Type': "application/x-www-form-urlencoded", 'Accept': "text/plain,text/html,application/xhtml+xml,application/xml"} 
-        else:
-            conn.request(method, path)
+        #if method == "POST":
+        #    params = urllib.parse.urlencode({'@number': 12524, '@type': 'issue', '@action': 'show'})
+        #    headers = {'Content-Type': "application/x-www-form-urlencoded", 'Accept': "text/plain,text/html,application/xhtml+xml,application/xml"} 
+        #else:
+        conn.request("GET", path)
         resp = conn.getresponse()
         if resp.status:
             http_response['status_code'] = resp.status
