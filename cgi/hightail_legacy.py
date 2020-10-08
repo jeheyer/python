@@ -28,7 +28,7 @@ def GetWWWURL(env = "prod", new_path = "/"):
 
     return { 'status_code': 301, 'location': "https://" + www_host + new_path }
 
-def GetAPIURL(env = "prod", new_path = "/", query_string = ""):
+def GetAPIURL(env = "prod", new_path = "/", query_string = None):
 
     if env == "prod":
         api_host = "api.spaces.hightail.com"
@@ -206,18 +206,12 @@ def ParseLegacyURL(hostname = "localhost", path = "/", query_fields = {}):
 
     # 1.0 SAML Login Handling
     if path.startswith("/loginSSO"):
-
         if "email" in query_fields and "caller" in query_fields:
             return GetAPIURL(env, "/api/v1/saml/loginSSO", "?email={}&caller=".format(query_fields['email'], query_fields['caller']))
         elif "email" in query_fields:
             return GetAPIURL(env, "/api/v1/saml/loginSSO", "?email={}".format(query_fields['email']))
         else:
             return GetSpacesURL(env, **{'new_path': "/corp-login"} )
-
-        #if "email" in query_fields and "caller" in query_fields:
-        #    return GetAPIURL(env, "/api/v1/saml/loginSSO"), 'email': query_fields['caller'], 'caller': query_fields['caller']} )
-        #elif "email" in query_fields:
-        #    return GetSpacesURL(env, **{'new_path': "/corp-login", 'email': query_fields['email']} )
 
     # 1.0 SAML Callback Handling
     if path.startswith("/samlLogin"):
