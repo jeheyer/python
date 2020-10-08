@@ -198,8 +198,8 @@ def ParseLegacyURL(hostname = "localhost", path = "/", query_fields = {}):
         if env == "prod":
             api_host = "api.spaces.hightail.com"
         elif env == "j5":
-            api_host = "api.j5.org"
-            #api_host = "api.spaces.hightail.com"
+            #api_host = "api.j5.org"
+            api_host = "api.spaces.hightail.com"
         else:
             api_host = "api." + env + ".htspaces.com"
         return ProxyHTTPConnection("GET", api_host, "/api/v1/saml/loginSSO", 443)
