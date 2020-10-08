@@ -90,6 +90,26 @@ def GetThirdPartyURL(url):
 
     return { 'status_code': 301, 'location': url }
 
+def ProxyHTTPSConnection(url, params)
+
+    import requests
+
+    try:
+        status_code = 400
+        resp = requests.get(url, params, timeout = 5)
+        if resp.status_code:
+            status_code = resp.status_code
+        if resp.headers['Content-Type']:
+            content_type =  resp.headers['Content-Type']
+        if 301 < status_code < 302:
+            body = None
+        else:
+            body = resp._content
+    except Exception as e:
+        return { 'status_code': status_code, 'content_type': "text/plain", 'body': str(e) }
+
+    return { 'status_code': status_code, 'content_type': content_type, 'body': body }
+
 def ProxyHTTPConnection(method = "GET", hostname = "localhost", path = "/", port = 80, timeout = 3):
 
     import http.client
@@ -210,7 +230,7 @@ def ParseLegacyURL(hostname = "localhost", path = "/", query_fields = {}):
             api_host = "api.spaces.hightail.com"
         else:
             api_host = "api." + env + ".htspaces.com"
-        return ProxyHTTPConnection("GET", api_host, "/api/v1/saml/loginSSO", 443)
+        return ProxyHTTPSConnection("https://{}/api/v1/saml/loginSSO?email={}".format(api_host, query_fields['email'])
 
         if "email" in query_fields and "caller" in query_fields:
             return ProxyHTTPConnection("GET", api_host, "/api/v1/saml/loginSSO?email={}&caller=".format(query_fields['email'], query_fields['caller']), 443)
