@@ -27,7 +27,7 @@ def main2():
 def main():
 
     import requests
-    url = "https://www.highdtail.com/en_US/theme_default/images/hightop_250px.png"
+    url = "https://www.hightail.com/en_US/theme_default/images/hightop_250px.png"
     try:
         status_code = 400
         resp = requests.get(url, params = {}, timeout = 5, allow_redirects = False)
