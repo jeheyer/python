@@ -318,13 +318,13 @@ if __name__ == "__main__":
         print("Set-Cookie: {}".format(http_response['cookies']))
 
     if 301 <= http_response['status_code'] <= 302:
-        print("Location: {}\n".format(http_response['status_code']))
+        print("Location: {}".format(http_response['location']))
     else:
-        print("Content-Type: {}\n".format(http_response['content_type']))
+        print("Content-Type: {}".format(http_response['content_type']))
 
     if 'body' in http_response and http_response['body']:
         if type(http_response['body']) == str:
-            print("\n{}".format(http_response['body']))
+            print(format(http_response['body'])
         else:
             sys.stdout.flush()
             sys.stdout.buffer.write(http_response['body'])
