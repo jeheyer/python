@@ -314,8 +314,8 @@ if __name__ == "__main__":
     http_response = main(http_request)
     print("Status: {}\n".format(http_response['status_code'])
 
-    if 'cookies' in http_response:
-        print("Set-Cookie: {}".format(http_response['cookies']))
+    #if 'cookies' in http_response:
+    #    print("Set-Cookie: {}".format(http_response['cookies']))
 
     if 301 <= http_response['status_code'] <= 302:
         print("Location: {}\n".format(http_response['status_code']))
