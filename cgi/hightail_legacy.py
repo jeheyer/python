@@ -348,13 +348,19 @@ def lambda_handler(event, context):
     lambda_output = {}
     lambda_output['statusCode'] = http_response['status_code']
 
+    if 'cookies' in http_response:
+        lambda_output['headers'] = { 'Set-Cookie': http_response['cookies'] }
+
     if 301 <= http_response['status_code'] <= 302:
         lambda_output['headers'] = { 'Location': http_response['location']}
     else:
-        lambda_output['headers'] =  { 'Content-Type': http_response['content_type'] }
+        lambda_output['headers'] = { 'Content-Type': http_response['content_type'] }
+        
+    if 'body' in http_response and http_response['body']: 
         if type(http_response['body']) == str:
             lambda_output['body'] = http_response['body']
         else:
             lambda_output['body'] = base64.b64encode(http_response['body']).decode("utf-8")
             lambda_output['isBase64Encoded'] = True
+        
     return lambda_output
