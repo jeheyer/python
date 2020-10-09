@@ -314,7 +314,7 @@ if __name__ == "__main__":
     http_response = main(http_request)
 
     if 301 <= http_response['status_code'] <= 302:
-        print("Status: {}\nLocation: {}".format(http_response['status_code'], http_response['location']))
+        print("Status: {}\nLocation: {}\n".format(http_response['status_code'], http_response['location']))
     else:
         print("Status: {}\nContent-Type: {}\n".format(http_response['status_code'], http_response['content_type']))
 
