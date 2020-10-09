@@ -322,12 +322,12 @@ if __name__ == "__main__":
     else:
         print("Content-Type: {}\n".format(http_response['content_type']))
 
-    #if 'body' in http_response and http_response['body']:
-    #    if type(http_response['body']) == str:
-    #        print("\n{}".format(http_response['body']))
-    #    else:
-    #        sys.stdout.flush()
-    #        sys.stdout.buffer.write(http_response['body'])
+    if 'body' in http_response and http_response['body']:
+        if type(http_response['body']) == str:
+            print("\n{}".format(http_response['body']))
+        else:
+            sys.stdout.flush()
+            sys.stdout.buffer.write(http_response['body'])
 
     sys.exit()
 
