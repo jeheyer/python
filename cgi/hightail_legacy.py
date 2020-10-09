@@ -312,21 +312,22 @@ if __name__ == "__main__":
         http_request['query_string'][key] = str(query_fields_objects[key].value)
 
     http_response = main(http_request)
-
-    if 301 <= http_response['status_code'] <= 302:
-        print("Status: {}\nLocation: {}\n".format(http_response['status_code'], http_response['location']))
-    else:
-        print("Status: {}\nContent-Type: {}\n".format(http_response['status_code'], http_response['content_type']))
+    print("Status: {}\n".format(http_response['status_code'])
 
     if 'cookies' in http_response:
         print("Set-Cookie: {}\n".format(http_response['cookies']))
 
+    if 301 <= http_response['status_code'] <= 302:
+        print("Location: {}\n".format(http_response['status_code']))
+    else:
+        print("Content-Type: {}\n".format(http_response['content_type']))
+
     if 'body' in http_response and http_response['body']:
-        #if type(http_response['body']) == str:
-        print("\n{}".format(http_response['body']))
-        #else:
-        #    sys.stdout.flush()
-        #    sys.stdout.buffer.write(http_response['body'])
+        if type(http_response['body']) == str:
+            print("\n{}".format(http_response['body']))
+        else:
+            sys.stdout.flush()
+            sys.stdout.buffer.write(http_response['body'])
 
     sys.exit()
 
