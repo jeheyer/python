@@ -315,19 +315,19 @@ if __name__ == "__main__":
     print("Status: {}\n".format(http_response['status_code'])
 
     if 'cookies' in http_response:
-        print("Set-Cookie: {}\n".format(http_response['cookies']))
+        print("Set-Cookie: {}".format(http_response['cookies']))
 
     if 301 <= http_response['status_code'] <= 302:
-        print("Location: {}\n\n".format(http_response['status_code']))
+        print("Location: {}\n".format(http_response['status_code']))
     else:
-        print("Content-Type: {}\n\n".format(http_response['content_type']))
+        print("Content-Type: {}\n".format(http_response['content_type']))
 
-    if 'body' in http_response and http_response['body']:
-        if type(http_response['body']) == str:
-            print("\n{}".format(http_response['body']))
-        else:
-            sys.stdout.flush()
-            sys.stdout.buffer.write(http_response['body'])
+    #if 'body' in http_response and http_response['body']:
+    #    if type(http_response['body']) == str:
+    #        print("\n{}".format(http_response['body']))
+    #    else:
+    #        sys.stdout.flush()
+    #        sys.stdout.buffer.write(http_response['body'])
 
     sys.exit()
 
