@@ -1,0 +1,259 @@
+import re
+
+def HT_Env(self, hostname = "www.hightail.com"):
+
+    def __init__():
+       self.hostname = hostname
+
+def GetTargets(hostname):
+
+    targets = { "www": "www.hightail.com", "spaces": "spaces.hightail.com" }
+
+    # Override for pre-prod and stage environments
+    if ".htspaces.com" in hostname or "stage.yousendit.com" in hostname:
+        if "stage." in hostname:
+            env = "stage"
+        else:
+            env = hostname.split(".")[1]
+        for type in targets:
+            targets[type] = type + "." + env + ".htspaces.com"
+
+    return targets
+
+def FindNewURL(hostname, path, query_fields = {}):
+
+    # Initialize some variables
+    action = None
+    new_url = None
+    targets = {}
+    ufid = None
+    batch_id = None
+    targets = GetTargets(hostname)
+
+    ##################################################################
+    ## BEGIN SECTION - Old www redirects from Marketing site
+
+    if re.match(r"/join|/litesignup|/compare-plans", path):
+        action = "redirect"
+        new_url =  targets["www"] + "/pricing"
+
+    if re.match(r"/about|/info/", path):
+        action = "redirect"
+        new_url = "www.opentext.com/about"
+
+    if "/careers" in path:
+        action = "redirect"
+        new_url = "www.opentext.com/about/careers"
+
+    if path.startswith("/aboutus/legal"):
+        action = "redirect"
+        if path.startswith("/aboutus/legal/copyright"):
+            new_url =  targets["www"] + "/copyright"
+        else:
+            new_url =  targets["www"] + "/terms"
+
+    ## END SECTION - Old www redirects
+    ##################################################################
+
+    ##################################################################
+    ## BEGIN SECTION - 1.0 to Spaces transition redirects
+
+    www_to_spaces = {
+        "/login": "/login",
+        "/loginSSO": "/corp-login",
+        "/send": "/send",
+        "/folders": "/storage/hightail",
+        "/sent": "/dashboard/tracker",
+        "/overview": "/dashboard/tracker"
+    }
+
+    if path in www_to_spaces:
+        action = "redirect"
+        new_url = targets["spaces"] + www_to_spaces[path]
+
+    ## END SECTION - 1.0 to Spaces transition redirects
+    ##################################################################
+
+    ##################################################################
+    ## BEGIN SECTION - YSI Generic Sites
+
+    # Just redirect these to www.hightail.com www with URI preserved unless more specific match found below
+    if hostname == "hightail.com" or "yousendit" in hostname:
+        action = "redirect"
+        new_url = targets["www"] + path
+
+    # Old SmartLing International sites
+    if re.match(r"fr|nl|it|de|es", hostname):
+        action = "redirect"
+        new_url = targets["www"] + path
+
+    # Old Marketing sites - YSI Blog and cms system
+    if hostname.startswith("blog.") or path.startswith("/cms/"):
+        action = "redirect"
+        new_url = "blog.hightail.com/"
+
+    ## END SECTION - Generic Sites
+    ##################################################################
+
+    ##################################################################
+    ## BEGIN SECTION - Customer Support Sites
+
+    # Older suport sites to Redirect to Zendesk
+    if re.match(r"learn|kb|support|static", hostname) or re.match(r"/lenovo_getting_started|/applications|/apps", path):
+        action = "redirect"
+        new_url = "hightail.zendesk.com"
+        # Express download
+        if path.startswith("/applications") or "Express" in path:
+            new_url += "/hc/en-us/articles/203132540-Installing-Hightail-Express-"
+        # Desktop sync download
+        elif re.match(r"/lenovo_getting_started|/apps|/plugins", path):
+            new_url += "/hc/en-us/articles/221397607-Hightail-Desktop-app"
+        else:
+            new_url += "/hc/en-us/"
+
+    # Ookla Speedtest
+    if hostname.startswith("speedtest."):
+        action = "redirect"
+        new_url = "www.speedtest.net/"
+
+    ## END SECTION - Customer Support Sites
+    ##################################################################
+
+    ##################################################################
+    ### BEGIN SECTION - YSI v1
+
+    # v1 has been unsupported since 2016
+    if path.startswith("/v1/"):
+        action = "redirect"
+        new_url =  targets["www"] + "/features"
+
+    ## END SECTION - YSI v1
+    ##################################################################
+
+    ##################################################################
+    ### BEGIN SECTION - YSI v2
+
+    # Standard YSI v2 Dropbox.  Example: dropbox.yousendit.com/john-heyer
+    if hostname.startswith("dropbox.") and path != "/":
+        action = "uplink"
+        uplink_name = path.replace("/","")
+
+    # Alternate YSI v2 Dropbox.  Example: www.hightail.com/dropbox?dropbox=john-heyer
+    if path.startswith("/dropbox") and "dropbox" in query_fields:
+        action = "uplink"
+        uplink_name = query_fields["dropbox"]
+
+    # YSI v2 Download.  Example: download.yousendit.com/TEhXcmxjQ1BiR0pEZU1UQw
+    if hostname.startswith("download.") and path != "/":
+        ufid = path.replace("/","")
+        if len(ufid) > 16:
+            action = "download"
+        else:
+            action = "error"
+
+    # YSI v2 transfer.php.  Example: www.hightail.com/transfer.php?action=dropbox&dropbox=john-heyer
+    if path.startswith("/transfer.php") and "action" in query_fields:
+        action = query_fields["action"]
+        if action == "download":
+            ufid = query_fields["ufid"]
+        if action == "dropbox":
+            action = "uplink"
+            uplink_name = query_fields["dropbox"]
+        if action == "batch_download":
+            if "send_id" in path:
+                action = "send"
+                send_id = query_fields["send_id"]
+                email_id = query_fields["email"]
+            if "batch_id" in path:
+                action = "download"
+                batch_id = query_fields["batch_id"]
+
+    ## END SECTION - YSI v2
+    ##################################################################
+
+    ##################################################################
+    ## BEGIN SECTION - YSI v3 / Hightail 1.0 (PHI)
+
+    # Regular Send.
+    # Example 1: rcpt.hightail.com/2794835375/bd42a60e44cf3fa52310439df7c18186
+    # Example 2: rcpt.yousendit.com/1194701705/0cd93bf53b9ac3f20beb9a2f60482d1d?cid=tx-02002208350200000000&s=19105
+    if hostname.startswith("rcpt.") and path != "/":
+        if path[10] == "/" or path[11] == "/":
+            action = "send"
+            send_id = path.split("/")[1]
+            email_id = path.split("/")[2][:32]
+
+    # Send via www i.e. www.hightail.com/send_id/email_id
+    if hostname.startswith("www.") and "/download/" not in path:
+        if path[0] == "/" and path[11] == "/" and path[1:11].digits == True:
+            action = "send"
+            send_id = path.split("/")[1]
+            email_id = path.split("/")[2]
+
+    # Regular Download.  Example: www.hightail.com/download/ZWJYNnFKQk5CTW52WnRVag
+    if path.startswith("/download/"):
+        batch_id = path.split("/")[2]
+        if batch_id and len(batch_id) >= 22:
+            action = "download"
+        else:
+            action = "error"
+
+    # PHI downloads
+    if path.startswith("/e?phi_action=app/orchestrateDownload") or path.startswith("/e?batch_id="):
+        if "batch_id" in query_fields:
+            action = "download"
+            batch_id = query_fields["batch_id"]
+        elif "sendId" in query_fields and "emailId" in query_fields:
+            action = "send"
+            send_id = query_fields["sendId"]
+            email_id = query_fields["emailId"]
+        else:
+            action = "error"
+
+    # PHI download with rurl parameter
+    if path == "/dl" and query_fields["phi_action"] == "app/orchestrateDownload":
+        rurl = query_fields["rurl"]
+        if "batch_id" in rurl:
+            action = "download"
+            batch_id = rurl[-22:]
+        elif "send_id" in rurl and "email" in rurl:
+            action = "send"
+            send_id = rurl[-49:-39]
+            email_id = rurl[-32:]
+        else:
+            action = "error"
+
+    # Uplink.  Example: www.hightail.com/u/john-heyer
+    if path.startswith("/u/") and len(path) > 3:
+        action = "uplink"
+        uplink_name = path[3:]
+
+    # PHI Shared Folder.  Example:
+    if path.startswith("/sharedFolder"):
+        if "id" in query_fields and "sharee" in query_fields:
+            action = "share"
+            id = query_fields["id"]
+            sharee = query_fields["sharee"]
+        else:
+            action = "error"
+
+    # Unsupported URIs
+    if path.startswith("directDownload"):
+        action = "error"
+
+    ## END SECTION - YSI v3 / Hightail 1.0 (PHI)
+    ##################################################################
+
+    if action == "download":
+        if ufid:
+            new_url = targets["spaces"] + "/resolve/ufid/" + ufid
+        if batch_id:
+            new_url = targets["spaces"] + "/resolve/download/" + batch_id
+    if action == "send":
+        new_url = targets["spaces"] + "/resolve/" + send_id + "/" + email_id
+    if action == "share":
+        new_url = targets["spaces"] + "/share-accept/" + id + "?email=" + sharee
+    if action == "uplink":
+        new_url = targets["spaces"] + "/resolve/u/" + uplink_name
+
+    return action, new_url
