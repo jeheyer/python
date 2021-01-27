@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 
 import sys
-import os
-import json
 
 def GetIP():
 
+    import os
     from ip_utils import GetClientIP
     ipv4_address = None
 
@@ -31,33 +30,31 @@ def GetIP():
             sys.exit("METHOD NOT SUPPORTED")
 
     else:
-        # Running via CLI
-        try:
-            ipv4_address = sys.argv[1]
-        except:
+        if len(sys.argv) > 1:
+            return sys.argv[1]
+        else:
             sys.exit("Must provide IP address as argument")
-        return ipv4_address
 
 def main():
 
-    import traceback
+    import json
+
+    sys.path.insert(1, 'lib/')
+    from geoip import GeoIP
+    from ip_utils import GetClientIP
+    ipv4_address = GetIP()
+    geo_ip = GeoIP(ipv4_address)
+    print("Content-Type: application/json; charset=UTF-8\n")
+    print(json.dumps(vars(geo_ip), indent=3))
+
+if __name__ == "__main__":
 
     sys.stderr = sys.stdout
 
     try:
-        sys.path.insert(1, 'lib/')
-        from geoip import GeoIP
-        from ip_utils import GetClientIP
-        ipv4_address = GetIP()
-        geo_ip = GeoIP(ipv4_address)
-        print("Content-Type: application/json; charset=UTF-8\n")
-        print(json.dumps(vars(geo_ip), indent=3))
+        main()
 
-    except:
-        print("Status: 500\nContent-Type: text/plain; charset=UTF-8\n")
-        exc = traceback.format_exc()
-        print(exc)
+    except Exception as e:
+        print("Status: 500\nContent-Type: text/plain\n\n{}".format(e))
 
-if __name__ == "__main__":
-    main()
     sys.exit()

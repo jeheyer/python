@@ -46,6 +46,7 @@ class MySQLDatabase():
 
         self.rows = []
         self.SQLExecute(command)
+        return self.rows
 
     def SQLInsertObject(self, table_name, object_to_insert):
 
