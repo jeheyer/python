@@ -9,7 +9,7 @@ def main():
 
     import configparser
     sys.stderr = sys.stdout
-    sys.path.insert(1, '../../code/python')
+    sys.path.insert(1, 'lib/')
     from database import MySQLDatabase
     #from http_utils import GetVariable
 
