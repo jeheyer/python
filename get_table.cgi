@@ -7,7 +7,7 @@ import json
 
 def main():
 
-    #import configparser
+    import configparser
     sys.stderr = sys.stdout
     sys.path.insert(1, 'lib/')
     from database import MySQLDatabase
@@ -40,8 +40,8 @@ def main():
     try:
 
         # Read config file
-        #config = configparser.ConfigParser()
-        #config.read('/mnt/homes/j5/automation/cfg/mysql.cfg')
+        config = configparser.ConfigParser()
+        config.read('/mnt/homes/j5/automation/cfg/mysql.cfg')
         mysql_database = MySQLDatabase(
             config[db_name]['hostname'],
             config[db_name]['username'],
