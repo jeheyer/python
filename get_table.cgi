@@ -41,7 +41,7 @@ def main():
 
         # Read config file
         config = configparser.ConfigParser()
-        config.read('/mnt/homes/j5/automation/cfg/mysql.cfg')
+        config.read('../automation/cfg/mysql.cfg')
         mysql_database = MySQLDatabase(
             config[db_name]['hostname'],
             config[db_name]['username'],
