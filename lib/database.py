@@ -13,8 +13,11 @@ class MySQLDatabase():
 
     def OpenConnection(self):
 
-        self.cnx = mysql.connector.connect(host = self.hostname, user = self.username, password = self.password, database = self.database)
-        self.GetVersion()
+        try:
+            self.cnx = mysql.connector.connect(host = self.hostname, user = self.username, password = self.password, database = self.database)
+            self.GetVersion()
+        except Exception as e:
+            raise Exception(e)
 
     def CloseConnection(self):
         self.cnx.close()
